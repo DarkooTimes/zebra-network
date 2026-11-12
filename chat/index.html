@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>zebra://chat — Live P2P Relay</title>
+  <style>
+    :root {
+      --bg: #070b0e;
+      --card: #0e161d;
+      --border: #1b2c38;
+      --accent: #00f5d4;
+      --accent-dim: rgba(0, 245, 212, 0.14);
+      --text: #e6f1f5;
+      --muted: #8aa0ad;
+      --self-bg: #0f292e;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: radial-gradient(circle at top, #0d1f26 0%, var(--bg) 70%);
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .app {
+      max-width: 780px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      background: #091015;
+      border-bottom: 1px solid var(--border);
+      font-family: monospace;
+    }
+
+    .title {
+      color: var(--accent);
+      font-weight: bold;
+      font-size: 1.05rem;
+    }
+
+    .peers-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .nick-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 20px;
+      background: #0b1319;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    .nick-bar input {
+      background: #070b0e;
+      border: 1px solid var(--border);
+      color: var(--accent);
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-family: monospace;
+      width: 170px;
+      outline: none;
+    }
+
+    .nick-bar input:focus {
+      border-color: var(--accent);
+    }
+
+    .messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .sys-msg {
+      text-align: center;
+      color: var(--muted);
+      font-family: monospace;
+      font-size: 0.82rem;
+      padding: 4px 0;
+    }
+
+    .msg {
+      max-width: 75%;
+      background: #121d26;
+      border: 1px solid var(--border);
+      padding: 10px 14px;
+      border-radius: 12px;
+      align-self: flex-start;
+      word-wrap: break-word;
+    }
+
+    .msg.self {
+      align-self: flex-end;
+      background: var(--self-bg);
+      border-color: rgba(0, 245, 212, 0.35);
+    }
+
+    .msg-meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .msg-time {
+      color: var(--muted);
+    }
+
+    .msg-text {
+      font-size: 0.96rem;
+      line-height: 1.45;
+    }
+
+    .input-area {
+      display: flex;
+      gap: 10px;
+      padding: 14px 20px;
+      background: #091015;
+      border-top: 1px solid var(--border);
+    }
+
+    .input-area input {
+      flex: 1;
+      background: #0e161d;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 0.98rem;
+      outline: none;
+    }
+
+    .input-area input:focus {
+      border-color: var(--accent);
+    }
+
+    .input-area button {
+      background: var(--accent);
+      color: #041014;
+      border: none;
+      padding: 0 22px;
+      border-radius: 10px;
+      font-family: monospace;
+      font-weight: bold;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .input-area button:hover {
+      opacity: 0.85;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="title">🦓 zebra://chat</div>
+      <div class="peers-badge">
+        <span class="dot"></span>
+        <span id="peerCount">1 online (You)</span>
+      </div>
+    </div>
+
+    <div class="nick-bar">
+      <span>Handle:</span>
+      <input type="text" id="nickname" maxlength="20" />
+      <span style="margin-left:auto; font-family:monospace; font-size:0.78rem;">P2P WEBRTC MESH</span>
+    </div>
+
+    <div class="messages" id="messages">
+      <div class="sys-msg">Connected to zebra://chat global mesh. Waiting for other Zebra travelers...</div>
+    </div>
+
+    <form class="input-area" id="chatForm">
+      <input type="text" id="msgInput" placeholder="Broadcast a message across Zebra..." autocomplete="off" required />
+      <button type="submit">SEND</button>
+    </form>
+  </div>
+
+  <script type="module">
+    import { joinRoom } from "https://esm.run";
+
+    const messagesEl = document.getElementById("messages");
+    const formEl = document.getElementById("chatForm");
+    const inputEl = document.getElementById("msgInput");
+    const nickEl = document.getElementById("nickname");
+    const peerCountEl = document.getElementById("peerCount");
+
+    // Generate a random Zebra traveler handle
+    const savedNick = localStorage.getItem("zebra_nick") || ("Zebra_" + Math.floor(1000 + Math.random() * 9000));
+    nickEl.value = savedNick;
+    nickEl.addEventListener("change", () => {
+      localStorage.setItem("zebra_nick", nickEl.value.trim() || savedNick);
+    });
+
+    // Join the shared P2P room
+    const room = joinRoom({ appId: "darkootimes-zebra-network-v1" }, "global-lobby");
+    const [sendChat, getChat] = room.makeAction("chat");
+
+    function updatePeerCount() {
+      const count = Object.keys(room.getPeers()).length + 1;
+      peerCountEl.textContent = count === 1 ? "1 online (You)" : `${count} online`;
+    }
+
+    function addSystemMsg(text) {
+      const div = document.createElement("div");
+      div.className = "sys-msg";
+      div.textContent = text;
+      messagesEl.appendChild(div);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    function addChatMsg(sender, text, isSelf = false) {
+      const wrapper = document.createElement("div");
+      wrapper.className = isSelf ? "msg self" : "msg";
+
+      const meta = document.createElement("div");
+      meta.className = "msg-meta";
+
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = sender;
+
+      const timeSpan = document.createElement("span");
+      timeSpan.className = "msg-time";
+      timeSpan.textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+      meta.appendChild(nameSpan);
+      meta.appendChild(timeSpan);
+
+      const body = document.createElement("div");
+      body.className = "msg-text";
+      body.textContent = text;
+
+      wrapper.appendChild(meta);
+      wrapper.appendChild(body);
+      messagesEl.appendChild(wrapper);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    room.onPeerJoin((peerId) => {
+      updatePeerCount();
+      addSystemMsg(`+ A new traveler joined the room (${peerId.slice(0, 6)})`);
+    });
+
+    room.onPeerLeave((peerId) => {
+      updatePeerCount();
+      addSystemMsg(`- A traveler disconnected (${peerId.slice(0, 6)})`);
+    });
+
+    getChat((data, peerId) => {
+      addChatMsg(data.user || peerId.slice(0, 6), data.text, false);
+    });
+
+    formEl.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = inputEl.value.trim();
+      if (!text) return;
+      const user = nickEl.value.trim() || "Anonymous";
+      sendChat({ user, text });
+      addChatMsg(user, text, true);
+      inputEl.value = "";
+    });
+  </script>
+</body>
+</html>
